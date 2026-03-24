@@ -14,21 +14,20 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 from docx.shared import Pt, RGBColor, Inches
 from pydantic import BaseModel, Field, field_validator
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, ListFlowable
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import A4
 import logging
 from load_dotenv import load_dotenv
 
 
 load_dotenv()
 
-# ---------------------------------------------------------------------------
-# Logging
-# ---------------------------------------------------------------------------
+
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
+
 OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1/chat/completions"
 DEFAULT_MODEL = "meta-llama/llama-3-8b-instruct"
@@ -36,9 +35,7 @@ OUTPUT_DIR: Path = Path("outputs")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# ---------------------------------------------------------------------------
-# Pydantic Models
-# ---------------------------------------------------------------------------
+
 
 class Project(BaseModel):
     name: Optional[str] = None
@@ -113,9 +110,7 @@ class Resume(BaseModel):
         return v
 
 
-# ---------------------------------------------------------------------------
-# 1. call_llm
-# ---------------------------------------------------------------------------
+
 
 def call_llm(prompt: str, system: str = "") -> str:
     """
@@ -179,9 +174,7 @@ def call_llm(prompt: str, system: str = "") -> str:
         return ""
 
 
-# ---------------------------------------------------------------------------
-# 2. get_next_question
-# ---------------------------------------------------------------------------
+
 
 # Mandatory fields collected in order
 _MANDATORY_FIELDS = ["name", "email", "phone"]
@@ -288,9 +281,7 @@ Question:
     return question
 
 
-# ---------------------------------------------------------------------------
-# 3. generate_resume
-# ---------------------------------------------------------------------------
+
 
 def _clean_llm_json(raw: str) -> str:
     """
@@ -447,9 +438,7 @@ def _resume_from_raw(data: dict) -> Resume:
     )
 
 
-# ---------------------------------------------------------------------------
-# 4. export_to_docx — Professional Layout
-# ---------------------------------------------------------------------------
+
 
 def _set_font(run, name: str = "Calibri", size: int = 11,
               bold: bool = False, color: Optional[RGBColor] = None):
@@ -649,113 +638,7 @@ def export_to_docx(resume: Resume) -> str:
     return str(filepath)
 
 
-# ---------------------------------------------------------------------------
-# 5. export_to_pdf
-# ---------------------------------------------------------------------------
-# def build_html_resume(resume: Resume) -> str:
-#     return f"""
-#     <html>
-#     <head>
-#         <style>
-#             body {{
-#                 font-family: Arial, sans-serif;
-#                 margin: 40px auto;
-#                 max-width: 800px;
-#                 line-height: 1.6;
-#             }}
-#             h1 {{
-#                 text-align: center;
-#                 color: #1f3864;
-#                 margin-bottom: 5px;
-#             }}
-#             .contact {{
-#                 text-align: center;
-#                 color: #555;
-#                 margin-bottom: 20px;
-#             }}
-#             h2 {{
-#                 border-bottom: 2px solid #2E74B5;
-#                 padding-bottom: 5px;
-#                 margin-top: 25px;
-#             }}
-#             ul {{
-#                 margin-top: 5px;
-#             }}
-#         </style>
-#     </head>
-#     <body>
 
-#     <h1>{resume.name}</h1>
-#     <div class="contact">{resume.email} | {resume.phone}</div>
-
-#     <h2>Summary</h2>
-#     <p>{resume.summary or ""}</p>
-
-#     <h2>Skills</h2>
-#     <p>{" • ".join(resume.skills)}</p>
-
-#     <h2>Education</h2>
-#     {"".join([
-#         f"<p><b>{e.degree}</b> — {e.institution} | {e.year} {('| ' + e.grade) if e.grade else ''}</p>"
-#         for e in resume.education
-#     ])}
-
-#     <h2>Projects</h2>
-#     {"".join([
-#         f"<p><b>{p.name}</b></p><ul>" +
-#         "".join([f"<li>{d}</li>" for d in p.description]) +
-#         "</ul>"
-#         for p in resume.projects
-#     ])}
-
-#     <h2>Experience</h2>
-#     {"".join([
-#         f"<p><b>{e.role}</b> — {e.company} | {e.duration}</p><ul>" +
-#         "".join([f"<li>{d}</li>" for d in e.description]) +
-#         "</ul>"
-#         for e in resume.experience
-#     ])}
-
-#     <h2>Clubs</h2>
-#     {"".join([
-#         f"<p><b>{c.name}</b> — {c.role}</p><p>{c.description or ''}</p>"
-#         for c in resume.clubs
-#     ])}
-
-#     </body>
-#     </html>
-#     """
-
-# def export_to_pdf(resume: Resume) -> str:
-#     """
-#     Convert resume to PDF via docx2pdf.
-#     Falls back to DOCX if conversion fails or docx2pdf is not installed.
-#     """
-#     docx_path = export_to_docx(resume)
-
-#     try:
-#         from docx2pdf import convert  # type: ignore
-
-#         pdf_path = docx_path.replace(".docx", ".pdf")
-#         convert(docx_path, pdf_path)
-#         logger.info("PDF saved: %s", pdf_path)
-#         return pdf_path
-
-#     except ImportError:
-#         logger.warning(
-#             "docx2pdf is not installed. Install it with: pip install docx2pdf. "
-#             "Returning DOCX path instead."
-#         )
-#         return docx_path
-#     except Exception as exc:
-#         logger.error("PDF conversion failed: %s. Returning DOCX path.", exc)
-#         return docx_path
-
-
-
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, ListFlowable
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.pagesizes import A4
 
 def export_to_pdf(resume: Resume) -> str:
     filepath = OUTPUT_DIR / f"{resume.name.replace(' ', '_')}.pdf"
@@ -811,9 +694,7 @@ def export_to_pdf(resume: Resume) -> str:
     doc.build(elements)
     return str(filepath)
 
-# ---------------------------------------------------------------------------
-# 6. export_resume — Unified Dispatcher
-# ---------------------------------------------------------------------------
+
 
 def export_resume(resume: Resume, format: str = "docx") -> str:
     """
@@ -835,60 +716,3 @@ def export_resume(resume: Resume, format: str = "docx") -> str:
         logger.warning("Unknown format '%s'. Defaulting to DOCX.", format)
         return export_to_docx(resume)
 
-
-# # ---------------------------------------------------------------------------
-# # Demo / Smoke Test
-# # ---------------------------------------------------------------------------
-
-
-# if __name__ == "__main__":
-#     # Sample collected data
-#     sample_data = {
-#         "name": "Arjun Menon",
-#         "email": "arjun.menon@example.com",
-#         "phone": "+91-9876543210",
-#         "skills": "Python, React, Machine Learning, SQL, Git",
-#         "education": "B.Tech in Computer Science at NIT Calicut (2022–2026)",
-#         "projects": "Built a WiFi congestion prediction model using Random Forest",
-#         "experience": "Intern at TechCorp, built REST APIs for 3 months",
-#         "clubs": "Google Developer Student Club, Technical Lead",
-#     }
-
-#     print("=" * 60)
-#     print("AI RESUME BUILDER — Demo Run")
-#     print("=" * 60)
-
-#     # 1. Simulate the question flow
-#     print("\n[1] Simulating question flow...")
-#     session: dict = {}
-#     fields_order = ["name", "email", "phone", "skills", "education", "projects", "experience", "clubs"]
-#     for field in fields_order:
-#         q = get_next_question(session)
-#         if q == "GENERATE_RESUME":
-#             break
-#         print(f"   Q: {q}")
-#         session[field] = sample_data[field]
-#         print(f"   A: {session[field]}\n")
-
-#     # 2. Generate resume via LLM
-#     print("[2] Generating structured resume via LLM...")
-#     resume_obj = generate_resume(sample_data)
-    
-#     # Validate with Pydantic
-#     resume_model = Resume.model_validate(resume_obj)
-    
-#     print(f"   Name     : {resume_model.name}")
-#     print(f"   Skills   : {resume_model.skills[:5]}")
-#     print(f"   Projects : {len(resume_model.projects)} entries")
-
-#     # 3. Export to DOCX
-#     print("\n[3] Exporting to DOCX...")
-#     docx_path = export_resume(resume_model, format="docx")
-#     print(f"   Saved: {docx_path}")
-
-#     # 4. Export to PDF
-#     print("\n[4] Exporting to PDF (requires docx2pdf and MS Word)...")
-#     pdf_path = export_resume(resume_model, format="pdf")
-#     print(f"   Saved: {pdf_path}")
-
-#     print("\nDone.")

@@ -4,8 +4,12 @@ from pydantic import BaseModel
 from typing import Optional
 import mammoth
 from fastapi.responses import HTMLResponse
+from fastapi import UploadFile, File
+import pdfplumber
+from docx import Document
 
-from core import generate_resume, export_resume, Resume  # ✅ FIXED
+from reviewer import review_resume
+from builder import generate_resume, export_resume, Resume  # ✅ FIXED
 
 app = FastAPI(title="AI Resume Builder API")
 
@@ -133,3 +137,70 @@ def download(data: ResumeInput, format: str = "docx"):
         filename=file_path.split("/")[-1],
         media_type="application/octet-stream"
     )
+
+
+
+
+
+# def extract_text_from_pdf(file) -> str:
+#     text = ""
+#     with pdfplumber.open(file) as pdf:
+#         for page in pdf.pages:
+#             text += page.extract_text() or ""
+#     return text
+
+
+# def extract_text_from_docx(file) -> str:
+#     doc = Document(file)
+#     return "\n".join([p.text for p in doc.paragraphs])
+from docling.document_converter import DocumentConverter
+import tempfile
+
+converter = DocumentConverter()
+
+import os
+
+def extract_text_with_docling(file: UploadFile) -> str:
+    try:
+        suffix = file.filename.split(".")[-1]
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{suffix}") as tmp:
+            file.file.seek(0)
+            tmp.write(file.file.read())
+            tmp_path = tmp.name
+
+        result = converter.convert(tmp_path)
+        text = result.document.export_to_markdown()
+
+        os.remove(tmp_path)  # 🔥 cleanup
+
+        return text
+
+    except Exception as e:
+        raise Exception(f"Docling extraction failed: {str(e)}")
+
+
+from fastapi import UploadFile, File
+
+@app.post("/review-file")
+async def review_file(file: UploadFile = File(...)):
+    try:
+        # ✅ Use Docling
+        text = extract_text_with_docling(file)
+
+        print("\n📄 Extracted Resume Text:\n", text)  # debug
+
+        if not text.strip():
+            raise HTTPException(status_code=400, detail="Empty resume text")
+
+        # AI Review
+        result = review_resume(text)
+        print(result)
+
+        return {
+            "success": True,
+            "review": result.model_dump()
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
