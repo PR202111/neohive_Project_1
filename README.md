@@ -1,11 +1,8 @@
 # Resume Builder Project
 
-**Google Drive Direct Link:**  
-[Watch Demo Video](https://drive.google.com/file/d/1LvdMo2mcQ1Zx-SLtdCQHn-gwsbgC5P-B/view?usp=sharing)
+A simple application that helps users create professional resumes and improve them with built-in review suggestions, making the process more structured and effective.
 
-This project is a Resume Builder application that allows users to generate and review professional resumes.
-
-Key Files:
+## Key Files
 
 * builder.py – Handles resume creation logic
 * reviewer.py – Handles resume review and suggestions
@@ -16,7 +13,7 @@ Key Files:
 
 Built with Python 3.13.
 
-Setup Instructions:
+## Setup
 
 1. Clone the repository:
 
@@ -51,7 +48,7 @@ python run.py
 * Streamlit UI will open at [http://localhost:8501](http://localhost:8501)
 * FastAPI backend will run at [http://localhost:8000](http://localhost:8000)
 
-File Structure:
+## Project Structure
 
 ```
 .
@@ -64,14 +61,12 @@ File Structure:
 └── README.md
 ```
 
-Demo Video:
-Replace the link below with your Google Drive or YouTube link:
+## Demo
 
-```
-[![Watch the demo](https://img.youtube.com/vi/YOUTUBE_VIDEO_ID/0.jpg)](https://your-video-link.com)
-```
+**Google Drive Direct Link:**  
+[Watch Demo Video](https://drive.google.com/file/d/1LvdMo2mcQ1Zx-SLtdCQHn-gwsbgC5P-B/view?usp=sharing)
 
-Notes:
+## Notes
 
 * Ensure you are using Python 3.13
 * Large video files should be hosted externally and linked in the README
