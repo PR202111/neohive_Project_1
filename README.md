@@ -1,7 +1,7 @@
 # Resume Builder Project
 
 **Google Drive Direct Link:**  
-[Watch Demo Video](https://drive.google.com/file/d/1LvdMo2mcQ1Zx-SLtdCQHn-gwsbgC5P-B/view?usp=drive_link)
+[Watch Demo Video](https://drive.google.com/file/d/1LvdMo2mcQ1Zx-SLtdCQHn-gwsbgC5P-B/view?usp=sharing)
 
 This project is a Resume Builder application that allows users to generate and review professional resumes.
 
